@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
+	database "github.com/adewoleadenigbagbe/simpleloadbalancer/server/db"
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/server/handlers"
 	"github.com/labstack/echo/v4"
 	echolog "github.com/labstack/gommon/log"
@@ -48,6 +49,11 @@ func CreateServerConfig() serverConfig {
 
 func main() {
 	var err error
+
+	//connect to db
+	database.ConnectToSqlite()
+
+	//new config
 	config := CreateServerConfig()
 
 	e := echo.New()
