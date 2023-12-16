@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
+	database "github.com/adewoleadenigbagbe/simpleloadbalancer/server/db"
+	"github.com/adewoleadenigbagbe/simpleloadbalancer/server/handlers"
 	"github.com/labstack/echo/v4"
 	echolog "github.com/labstack/gommon/log"
 )
@@ -47,6 +49,11 @@ func CreateServerConfig() serverConfig {
 
 func main() {
 	var err error
+
+	//connect to db
+	database.ConnectToSqlite()
+
+	//new config
 	config := CreateServerConfig()
 
 	e := echo.New()
@@ -56,6 +63,12 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
+
+	e.GET("/product/:id", handlers.GetProductByIdHandler)
+
+	e.GET("/product", handlers.GetProductsHandler)
+
+	e.POST("/product", handlers.AddProductHandler)
 
 	// Start server
 	go func() {
