@@ -3,7 +3,7 @@
     "port": 3008,
     "protocol" : "http",
     "algorithm" : "RoundRobin",
-    "backends" : [
+    "backendUrls" : [
         "http://localhost:4091",
         "http://localhost:4092",
         "http://localhost:4093",

@@ -1,10 +1,12 @@
-package loadbalancer
+package backend
 
 import (
 	"database/sql"
 	"net/http/httputil"
 	"net/url"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 var _ IBackend = (*Backend)(nil)
@@ -44,4 +46,14 @@ func (backend *Backend) GetURL() url.URL {
 
 func (backend *Backend) IsAlive() bool {
 	return backend.alive
+}
+
+func NewBackend(endpoint *url.URL, proxy *httputil.ReverseProxy) Backend {
+	backend := Backend{
+		id:           uuid.NewString(),
+		url:          *endpoint,
+		reverseProxy: proxy,
+	}
+
+	return backend
 }
