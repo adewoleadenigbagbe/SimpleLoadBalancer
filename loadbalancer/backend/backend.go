@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"database/sql"
+	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"sync"
@@ -16,11 +16,15 @@ type IBackend interface {
 	SetAlive(bool)
 	IsAlive() bool
 	GetURL() url.URL
+	Serve(w http.ResponseWriter, r *http.Request)
 }
 
 type Metrics struct {
-	connections sql.NullInt32
-	weight      sql.NullFloat64
+	//connections sql.NullInt32
+	//weight      sql.NullFloat64
+
+	connections int
+	weight      float64
 }
 
 type Backend struct {
@@ -37,7 +41,9 @@ func (backend *Backend) GetID() string {
 }
 
 func (backend *Backend) SetAlive(alive bool) {
+	backend.mux.Lock()
 	backend.alive = alive
+	backend.mux.Unlock()
 }
 
 func (backend *Backend) GetURL() url.URL {
@@ -45,15 +51,25 @@ func (backend *Backend) GetURL() url.URL {
 }
 
 func (backend *Backend) IsAlive() bool {
+	backend.mux.RLock()
+	defer backend.mux.RUnlock()
 	return backend.alive
 }
 
-func NewBackend(endpoint *url.URL, proxy *httputil.ReverseProxy) Backend {
+func (backend *Backend) Serve(w http.ResponseWriter, r *http.Request) {
+	backend.mux.Lock()
+	defer backend.mux.Unlock()
+	backend.metrics.connections++
+	backend.reverseProxy.ServeHTTP(w, r)
+}
+
+func NewBackend(endpoint *url.URL, proxy *httputil.ReverseProxy) IBackend {
 	backend := Backend{
 		id:           uuid.NewString(),
 		url:          *endpoint,
 		reverseProxy: proxy,
+		metrics:      &Metrics{},
 	}
 
-	return backend
+	return &backend
 }

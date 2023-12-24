@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/lb"
-	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -33,16 +32,14 @@ func main() {
 
 	//create echo server
 	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", lbConfig.Port),
 		Handler: http.HandlerFunc(loadbalancer.Serve),
 	}
-	e := echo.New()
-	e.Server = server
 
 	// Start server
 	go func() {
-		address := fmt.Sprintf(":%d", lbConfig.Port)
-		if err := e.Start(address); err != nil && err != http.ErrServerClosed {
-			e.Logger.Fatal("shutting down the server")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal("shutting down the server")
 		}
 	}()
 
@@ -52,8 +49,8 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err = e.Shutdown(ctx); err != nil {
-		e.Logger.Fatal(err)
+	if err = server.Shutdown(ctx); err != nil {
+		log.Fatal(err)
 	}
 }
 

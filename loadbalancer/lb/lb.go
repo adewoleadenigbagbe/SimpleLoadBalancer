@@ -22,19 +22,32 @@ type LbConfig struct {
 
 type LoadBalancer struct {
 	algorithm  enums.LoadBalancingAlgorithmType
-	ServerPool *pool.ServerPool
+	ServerPool pool.ServerPool
 	//db and cache
 }
 
-// Serve : the backend server that needs to handle the request and forward a response
+// Serve: the loadbalancer serves request to the next backend
 func (loadbalancer *LoadBalancer) Serve(w http.ResponseWriter, r *http.Request) {
+	nextServer := loadbalancer.ServerPool.GetNextServer()
+	if nextServer != nil {
+		// modify the request
+		baseUrl := nextServer.GetURL()
+		err := modifyRequest(baseUrl, r)
+		if err == nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		nextServer.Serve(w, r)
+		return
+	}
 
+	http.Error(w, "Service not available", http.StatusServiceUnavailable)
 }
 
 func CreateLB(config LbConfig) (*LoadBalancer, error) {
 	var (
 		err        error
-		serverPool *pool.ServerPool
+		serverPool pool.ServerPool
 		algorithm  enums.LoadBalancingAlgorithmType
 	)
 
@@ -59,7 +72,7 @@ func CreateLB(config LbConfig) (*LoadBalancer, error) {
 	return lb, nil
 }
 
-func configureUrls(algorithm enums.LoadBalancingAlgorithmType, backendUrls []string) (*pool.ServerPool, error) {
+func configureUrls(algorithm enums.LoadBalancingAlgorithmType, backendUrls []string) (pool.ServerPool, error) {
 	serverPool, err := createPool(algorithm)
 	if err != nil {
 		log.Fatal(err)
@@ -78,7 +91,7 @@ func configureUrls(algorithm enums.LoadBalancingAlgorithmType, backendUrls []str
 		serverPool.AddBackEnd(backend)
 	}
 
-	return &serverPool, nil
+	return serverPool, nil
 }
 
 func createPool(algorithm enums.LoadBalancingAlgorithmType) (pool.ServerPool, error) {
@@ -88,4 +101,11 @@ func createPool(algorithm enums.LoadBalancingAlgorithmType) (pool.ServerPool, er
 	default:
 		return nil, errors.New("no algorithm configured")
 	}
+}
+
+func modifyRequest(url url.URL, request *http.Request) error {
+	path := request.URL.String() + url.RequestURI()
+	_, err := request.URL.Parse(path)
+
+	return err
 }
