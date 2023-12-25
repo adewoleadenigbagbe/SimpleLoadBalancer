@@ -70,6 +70,5 @@ func NewBackend(endpoint *url.URL, proxy *httputil.ReverseProxy) IBackend {
 		reverseProxy: proxy,
 		metrics:      &Metrics{},
 	}
-
 	return &backend
 }

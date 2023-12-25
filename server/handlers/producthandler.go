@@ -17,6 +17,9 @@ func AddProductHandler(productContext echo.Context) error {
 	productService := services.ProductService{}
 	resp := productService.AddProduct(*req)
 
+	if resp == "" {
+		return productContext.JSON(http.StatusInternalServerError, "could not save product")
+	}
 	return productContext.JSON(http.StatusOK, resp)
 }
 
@@ -41,7 +44,10 @@ func GetProductByIdHandler(productContext echo.Context) error {
 	}
 
 	productService := services.ProductService{}
-	resp := productService.GetProductById(*req)
+	resp, err := productService.GetProductById(*req)
+	if err != nil {
+		return productContext.JSON(http.StatusInternalServerError, err.Error())
+	}
 
 	return productContext.JSON(http.StatusOK, resp)
 }

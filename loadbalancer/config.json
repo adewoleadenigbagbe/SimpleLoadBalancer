@@ -4,11 +4,11 @@
     "protocol" : "http",
     "algorithm" : "RoundRobin",
     "backendUrls" : [
+        "http://localhost:4090",
         "http://localhost:4091",
         "http://localhost:4092",
         "http://localhost:4093",
-        "http://localhost:4094",
-        "http://localhost:4095"
+        "http://localhost:4094"
     ]
 }
 

@@ -1,7 +1,6 @@
 package services
 
 import (
-	"log"
 	"time"
 
 	database "github.com/adewoleadenigbagbe/simpleloadbalancer/server/db"
@@ -31,7 +30,7 @@ func (productService ProductService) AddProduct(product Product) string {
 		product.Discontinued, product.Category, product.CreatedOn, product.ModifiedOn)
 
 	if err != nil {
-		log.Fatal(err)
+		return ""
 	}
 	return product.Id
 }

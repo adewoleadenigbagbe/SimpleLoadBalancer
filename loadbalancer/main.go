@@ -38,6 +38,7 @@ func main() {
 
 	// Start server
 	go func() {
+		fmt.Println("server started on port:", lbConfig.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal("shutting down the server")
 		}
