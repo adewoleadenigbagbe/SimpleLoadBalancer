@@ -2,7 +2,6 @@ package lb
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -31,14 +30,6 @@ type LoadBalancer struct {
 func (loadbalancer *LoadBalancer) Serve(w http.ResponseWriter, r *http.Request) {
 	nextServer := loadbalancer.ServerPool.GetNextServer()
 	if nextServer != nil {
-		// modify the request
-		baseUrl := nextServer.GetURL()
-		fmt.Println(baseUrl.Host)
-		err := modifyRequest(baseUrl, r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
 		nextServer.Serve(w, r)
 		return
 	}
@@ -106,8 +97,5 @@ func createPool(algorithm enums.LoadBalancingAlgorithmType) (pool.ServerPool, er
 }
 
 func modifyRequest(url url.URL, request *http.Request) error {
-	path := url.String() + request.URL.RequestURI()
-	_, err := request.URL.Parse(path)
-
-	return err
+	return nil
 }

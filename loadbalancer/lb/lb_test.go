@@ -18,18 +18,16 @@ func TestCreateRoundRobinPool(t *testing.T) {
 }
 
 func TestGetPoolSize(t *testing.T) {
+	url, _ := url.Parse("http://localhost:3333")
 	serverpool, _ := createPool(enums.RoundRobin)
 	roundRobinPool, _ := serverpool.(*pool.RoundRobinPool)
-	url, _ := url.Parse("http://localhost:3333")
+
 	b := backend.NewBackend(url, httputil.NewSingleHostReverseProxy(url)).(*backend.Backend)
 	roundRobinPool.AddBackEnd(b)
 
+	//Assert
 	assert.Equal(t, 1, roundRobinPool.GetBackends())
 }
-
-// func TestModifyRequest(t *testing.T) {
-
-// }
 
 // func TestServe(t *testing.T) {
 
