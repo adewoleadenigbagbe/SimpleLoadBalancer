@@ -16,6 +16,7 @@ type IBackend interface {
 	SetAlive(bool)
 	IsAlive() bool
 	GetURL() url.URL
+	GetActiveConnections() int
 	Serve(w http.ResponseWriter, r *http.Request)
 }
 
@@ -61,6 +62,12 @@ func (backend *Backend) Serve(w http.ResponseWriter, r *http.Request) {
 	defer backend.mux.Unlock()
 	backend.metrics.connections++
 	backend.reverseProxy.ServeHTTP(w, r)
+}
+
+func (backend *Backend) GetActiveConnections() int {
+	backend.mux.Lock()
+	defer backend.mux.Unlock()
+	return backend.metrics.connections
 }
 
 func NewBackend(endpoint *url.URL, proxy *httputil.ReverseProxy) IBackend {

@@ -1,7 +1,6 @@
 package lb
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -66,7 +65,7 @@ func CreateLB(config LbConfig) (*LoadBalancer, error) {
 }
 
 func configureUrls(algorithm enums.LoadBalancingAlgorithmType, backendUrls []string) (pool.ServerPool, error) {
-	serverPool, err := createPool(algorithm)
+	serverPool, err := pool.CreatePool(algorithm)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -85,15 +84,6 @@ func configureUrls(algorithm enums.LoadBalancingAlgorithmType, backendUrls []str
 	}
 
 	return serverPool, nil
-}
-
-func createPool(algorithm enums.LoadBalancingAlgorithmType) (pool.ServerPool, error) {
-	switch algorithm {
-	case enums.RoundRobin:
-		return &pool.RoundRobinPool{}, nil
-	default:
-		return nil, errors.New("no algorithm configured")
-	}
 }
 
 func modifyRequest(url url.URL, request *http.Request) error {

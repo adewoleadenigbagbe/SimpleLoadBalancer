@@ -13,11 +13,15 @@ func (roundRobinPool *RoundRobinPool) AddBackEnd(backend backend.IBackend) {
 	roundRobinPool.backends = append(roundRobinPool.backends, backend)
 }
 
-func (roundRobinPool *RoundRobinPool) GetBackends() int {
+func (roundRobinPool *RoundRobinPool) GetBackendCount() int {
 	return len(roundRobinPool.backends)
 }
 
 func (roundRobinPool *RoundRobinPool) GetNextServer() backend.IBackend {
 	roundRobinPool.current = (roundRobinPool.current + 1) % len(roundRobinPool.backends)
 	return roundRobinPool.backends[roundRobinPool.current]
+}
+
+func (roundRobinPool *RoundRobinPool) GetBackends() []backend.IBackend {
+	return roundRobinPool.backends
 }
