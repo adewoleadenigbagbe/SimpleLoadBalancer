@@ -13,6 +13,7 @@ var _ IBackend = (*Backend)(nil)
 
 type IBackend interface {
 	GetID() string
+	GetWeight() int
 	SetAlive(bool)
 	IsAlive() bool
 	GetURL() url.URL
@@ -21,12 +22,11 @@ type IBackend interface {
 }
 
 type Metrics struct {
-	//connections sql.NullInt32
-	//weight      sql.NullFloat64
-
 	connections int
-	weight      float64
+	weight      int
 }
+
+type MetricsOption func(*Metrics)
 
 type Backend struct {
 	id           string
@@ -65,17 +65,39 @@ func (backend *Backend) Serve(w http.ResponseWriter, r *http.Request) {
 }
 
 func (backend *Backend) GetActiveConnections() int {
-	backend.mux.Lock()
-	defer backend.mux.Unlock()
+	backend.mux.RLock()
+	defer backend.mux.RUnlock()
 	return backend.metrics.connections
 }
 
-func NewBackend(endpoint *url.URL, proxy *httputil.ReverseProxy) IBackend {
+func (backend *Backend) GetWeight() int {
+	backend.mux.RLock()
+	defer backend.mux.RUnlock()
+	return backend.metrics.weight
+}
+
+func NewBackend(endpoint *url.URL, proxy *httputil.ReverseProxy, options ...MetricsOption) IBackend {
 	backend := Backend{
 		id:           uuid.NewString(),
 		url:          *endpoint,
 		reverseProxy: proxy,
 		metrics:      &Metrics{},
 	}
+
+	for _, opt := range options {
+		opt(backend.metrics)
+	}
 	return &backend
+}
+
+func WithConnections(connections int) MetricsOption {
+	return func(m *Metrics) {
+		m.connections = connections
+	}
+}
+
+func WithWeight(weight int) MetricsOption {
+	return func(m *Metrics) {
+		m.weight = weight
+	}
 }

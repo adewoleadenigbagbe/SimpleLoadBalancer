@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/lb"
+	pool "github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/serverpool"
 )
 
 const (
@@ -55,7 +56,7 @@ func main() {
 	}
 }
 
-func CreateLBConfig() (*lb.LbConfig, error) {
+func CreateLBConfig() (*pool.LbConfig, error) {
 	currentWorkingDirectory, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -66,7 +67,7 @@ func CreateLBConfig() (*lb.LbConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	var config lb.LbConfig
+	var config pool.LbConfig
 	err = json.Unmarshal(content, &config)
 	if err != nil {
 		return nil, err

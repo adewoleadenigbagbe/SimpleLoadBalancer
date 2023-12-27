@@ -1,6 +1,13 @@
 package pool
 
-import "github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
+import (
+	"log"
+	"net/http/httputil"
+	"net/url"
+
+	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
+	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/enums"
+)
 
 var _ ServerPool = (*RoundRobinPool)(nil)
 
@@ -24,4 +31,19 @@ func (roundRobinPool *RoundRobinPool) GetNextServer() backend.IBackend {
 
 func (roundRobinPool *RoundRobinPool) GetBackends() []backend.IBackend {
 	return roundRobinPool.backends
+}
+
+func (roundRobinPool *RoundRobinPool) ConfigurePool(algorithm enums.LoadBalancingAlgorithmType, configs []BeConfig) {
+	for _, config := range configs {
+		url, err := url.Parse(config.Url)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		proxy := httputil.NewSingleHostReverseProxy(url)
+		backend := backend.NewBackend(url, proxy)
+
+		backend.SetAlive(true)
+		roundRobinPool.AddBackEnd(backend)
+	}
 }

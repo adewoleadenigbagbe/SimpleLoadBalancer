@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"testing"
 
+	pool "github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/serverpool"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )
@@ -39,12 +40,21 @@ func TestServeRobinPool(t *testing.T) {
 	})
 
 	//Load Balancer
-	config := LbConfig{
-		Algorithm:   "RoundRobin",
-		Ip:          "localhost",
-		Port:        3662,
-		Protocol:    "http",
-		BackendUrls: urlstrs,
+	var beConfigs []pool.BeConfig
+	for _, urlstr := range urlstrs {
+		beConfig := pool.BeConfig{
+			Url:    urlstr,
+			Weight: 0,
+		}
+		beConfigs = append(beConfigs, beConfig)
+	}
+
+	config := pool.LbConfig{
+		Algorithm: "RoundRobin",
+		Ip:        "localhost",
+		Port:      3662,
+		Protocol:  "http",
+		BeConfigs: beConfigs,
 	}
 
 	lb, _ := CreateLB(config)

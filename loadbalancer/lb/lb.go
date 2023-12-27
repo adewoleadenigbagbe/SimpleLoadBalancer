@@ -3,21 +3,11 @@ package lb
 import (
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 
-	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/enums"
 	pool "github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/serverpool"
 )
-
-type LbConfig struct {
-	Ip          string
-	Port        int
-	Protocol    string
-	Algorithm   string
-	BackendUrls []string
-}
 
 type LoadBalancer struct {
 	algorithm  enums.LoadBalancingAlgorithmType
@@ -36,7 +26,7 @@ func (loadbalancer *LoadBalancer) Serve(w http.ResponseWriter, r *http.Request) 
 	http.Error(w, "Service not available", http.StatusServiceUnavailable)
 }
 
-func CreateLB(config LbConfig) (*LoadBalancer, error) {
+func CreateLB(config pool.LbConfig) (*LoadBalancer, error) {
 	var (
 		err        error
 		serverPool pool.ServerPool
@@ -46,14 +36,18 @@ func CreateLB(config LbConfig) (*LoadBalancer, error) {
 	switch config.Algorithm {
 	case "RoundRobin":
 		algorithm = enums.RoundRobin
+	case "WeightedRoundRobin":
+		algorithm = enums.WeightedRoundRobin
 	default:
 		log.Fatal("no algorithm configured")
 	}
 
-	serverPool, err = configureUrls(algorithm, config.BackendUrls)
+	serverPool, err = pool.CreatePool(algorithm)
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
+
+	serverPool.ConfigurePool(algorithm, config.BeConfigs)
 
 	lb := &LoadBalancer{
 		algorithm:  algorithm,
@@ -62,28 +56,6 @@ func CreateLB(config LbConfig) (*LoadBalancer, error) {
 
 	// server the load balancer on tcp connection
 	return lb, nil
-}
-
-func configureUrls(algorithm enums.LoadBalancingAlgorithmType, backendUrls []string) (pool.ServerPool, error) {
-	serverPool, err := pool.CreatePool(algorithm)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, backendUrl := range backendUrls {
-		url, err := url.Parse(backendUrl)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		proxy := httputil.NewSingleHostReverseProxy(url)
-		backend := backend.NewBackend(url, proxy)
-		backend.SetAlive(true)
-
-		serverPool.AddBackEnd(backend)
-	}
-
-	return serverPool, nil
 }
 
 func modifyRequest(url url.URL, request *http.Request) error {
