@@ -2,52 +2,77 @@ package pool
 
 import (
 	"log"
-	"math/rand"
 	"net/http/httputil"
 	"net/url"
 
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/enums"
+	"github.com/samber/lo"
 )
 
 var _ ServerPool = (*WeightedRoundRobinPool)(nil)
 
 type WeightedRoundRobinPool struct {
-	backends         []backend.IBackend
-	backendWeightMap []map[string]int
+	weightedBackends []*WeightedS
+}
+
+type WeightedS struct {
+	backend         backend.IBackend
+	currentWeight   int
+	effectiveWeight int
 }
 
 func (weightedRoundRobinPool *WeightedRoundRobinPool) AddBackEnd(backend backend.IBackend) {
-	weightedRoundRobinPool.backends = append(weightedRoundRobinPool.backends, backend)
+	ws := &WeightedS{
+		backend:         backend,
+		effectiveWeight: backend.GetWeight(),
+	}
+	weightedRoundRobinPool.weightedBackends = append(weightedRoundRobinPool.weightedBackends, ws)
 }
 
 func (weightedRoundRobinPool *WeightedRoundRobinPool) GetBackendCount() int {
-	return len(weightedRoundRobinPool.backends)
+	return len(weightedRoundRobinPool.weightedBackends)
 }
 
 func (weightedRoundRobinPool *WeightedRoundRobinPool) GetBackends() []backend.IBackend {
-	return weightedRoundRobinPool.backends
+	backends := lo.Map(weightedRoundRobinPool.weightedBackends, func(item *WeightedS, index int) backend.IBackend {
+		return item.backend
+	})
+	return backends
 }
 
 // GetNextServer implement smooth weighted round-robin balancing. Check the following link to see it works
 // https://github.com/nginx/nginx/commit/52327e0627f49dbda1e8db695e63a4b0af4448b1
 func (weightedRoundRobinPool *WeightedRoundRobinPool) GetNextServer() backend.IBackend {
-	//increment the respectiver be with their assigned weight and get the culmulative sum of all weight
-	culmulativeWeight := 0
-	for i, backend := range weightedRoundRobinPool.backends {
-		id := backend.GetID()
-		weight := backend.GetWeight()
-		weightedRoundRobinPool.backendWeightMap[i][id] += weight
-		culmulativeWeight += weightedRoundRobinPool.backendWeightMap[i][id]
+	//increment the respective be with their assigned weight and get the culmulative sum of all weight
+	var best *WeightedS
+	total := 0
+
+	for i := 0; i < len(weightedRoundRobinPool.weightedBackends); i++ {
+		ws := weightedRoundRobinPool.weightedBackends[i]
+
+		if ws == nil {
+			continue
+		}
+
+		ws.currentWeight += ws.effectiveWeight
+		total += ws.effectiveWeight
+		if ws.effectiveWeight < ws.backend.GetWeight() {
+			ws.effectiveWeight++
+		}
+
+		if best == nil || ws.currentWeight > best.currentWeight {
+			best = ws
+		}
+
 	}
 
-	//randomly pick a backend
-	index := rand.Intn(len(weightedRoundRobinPool.backends))
-	b := weightedRoundRobinPool.backends[index]
-	id := b.GetID()
-	weightedRoundRobinPool.backendWeightMap[index][id] += culmulativeWeight
+	if best == nil {
+		return nil
+	}
 
-	return b
+	best.currentWeight -= total
+	return best.backend
 }
 
 func (weightedRoundRobinPool *WeightedRoundRobinPool) ConfigurePool(algorithm enums.LoadBalancingAlgorithmType, configs []BeConfig) {
@@ -62,10 +87,5 @@ func (weightedRoundRobinPool *WeightedRoundRobinPool) ConfigurePool(algorithm en
 		backend := backend.NewBackend(url, proxy, backend.WithWeight(config.Weight))
 		backend.SetAlive(true)
 		weightedRoundRobinPool.AddBackEnd(backend)
-		id := backend.GetID()
-		mp := map[string]int{
-			id: 0,
-		}
-		weightedRoundRobinPool.backendWeightMap = append(weightedRoundRobinPool.backendWeightMap, mp)
 	}
 }
