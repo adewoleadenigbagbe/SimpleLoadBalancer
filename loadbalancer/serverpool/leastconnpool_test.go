@@ -10,20 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateRoundRobinPool(t *testing.T) {
-	serverpool, _ := CreatePool(enums.RoundRobin)
-	_, ok := serverpool.(*RoundRobinPool)
-	assert.Equal(t, true, ok)
-}
-
-func TestGetPoolSize(t *testing.T) {
+func TestLeastConnPoolSize(t *testing.T) {
 	url, _ := url.Parse("http://localhost:3333")
-	serverpool, _ := CreatePool(enums.RoundRobin)
-	roundRobinPool, _ := serverpool.(*RoundRobinPool)
+	serverpool, _ := CreatePool(enums.LeastConnection)
+	leastConnPool, _ := serverpool.(*LeastConnPool)
 
 	b := backend.NewBackend(url, httputil.NewSingleHostReverseProxy(url)).(*backend.Backend)
-	roundRobinPool.AddBackEnd(b)
+	leastConnPool.AddBackEnd(b)
 
 	//Assert
-	assert.Equal(t, 1, roundRobinPool.GetBackendCount())
+	assert.Equal(t, 1, leastConnPool.GetBackendCount())
 }

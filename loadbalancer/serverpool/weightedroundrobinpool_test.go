@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetNextServer(t *testing.T) {
+func TestWeightedRoundRobinNextServer(t *testing.T) {
 	url1, _ := url.Parse("http://localhost:3330")
 	b1 := backend.NewBackend(url1, httputil.NewSingleHostReverseProxy(url1), backend.WithWeight(4)).(*backend.Backend)
 

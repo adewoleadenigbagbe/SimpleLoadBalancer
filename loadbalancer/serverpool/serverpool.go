@@ -33,6 +33,8 @@ func CreatePool(algorithm enums.LoadBalancingAlgorithmType) (ServerPool, error) 
 		return &RoundRobinPool{}, nil
 	case enums.WeightedRoundRobin:
 		return &WeightedRoundRobinPool{}, nil
+	case enums.LeastConnection:
+		return &LeastConnPool{}, nil
 	default:
 		return nil, errors.New("no algorithm configured")
 	}
