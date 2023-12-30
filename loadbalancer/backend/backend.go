@@ -97,6 +97,9 @@ func WithConnections(connections int) MetricsOption {
 }
 
 func WithWeight(weight int) MetricsOption {
+	if weight == 0 {
+		weight = 1
+	}
 	return func(m *Metrics) {
 		m.weight = weight
 	}

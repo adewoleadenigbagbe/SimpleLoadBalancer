@@ -8,67 +8,69 @@ import (
 	"crypto/sha1"
 	"sort"
 	"strconv"
+
+	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
 )
 
 type node struct {
-	node string
-	hash uint
+	backend backend.IBackend
+	hash    uint
 }
 
-type tickArray []node
+type continumPoints []node
 
-func (p tickArray) Len() int           { return len(p) }
-func (p tickArray) Less(i, j int) bool { return p[i].hash < p[j].hash }
-func (p tickArray) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-func (p tickArray) Sort()              { sort.Sort(p) }
+func (p continumPoints) Len() int           { return len(p) }
+func (p continumPoints) Less(i, j int) bool { return p[i].hash < p[j].hash }
+func (p continumPoints) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p continumPoints) Sort()              { sort.Sort(p) }
 
-type hashRing struct {
+type HashRing struct {
 	defaultSpots int
-	ticks        tickArray
+	points       continumPoints
 	length       int
 }
 
-func NewRing(n int) (h *hashRing) {
-	h = new(hashRing)
+func NewRing(n int) (h *HashRing) {
+	h = new(HashRing)
 	h.defaultSpots = n
 	return
 }
 
 // Adds a new node to a hash ring
-// n: name of the server
-// s: multiplier for default number of ticks (useful when one cache node has more resources, like RAM, than another)
-func (h *hashRing) AddNode(n string, s int) {
-	tSpots := h.defaultSpots * s
+func (h *HashRing) AddNode(b backend.IBackend) {
+	weight := b.GetWeight()
+	tSpots := h.defaultSpots * weight
 	hash := sha1.New()
 	for i := 1; i <= tSpots; i++ {
-		hash.Write([]byte(n + ":" + strconv.Itoa(i)))
+		url := b.GetURL()
+		hash.Write([]byte(url.String() + ":" + strconv.Itoa(i)))
 		hashBytes := hash.Sum(nil)
 
 		n := &node{
-			node: n,
-			hash: uint(hashBytes[19]) | uint(hashBytes[18])<<8 | uint(hashBytes[17])<<16 | uint(hashBytes[16])<<24,
+			backend: b,
+			hash:    uint(hashBytes[19]) | uint(hashBytes[18])<<8 | uint(hashBytes[17])<<16 | uint(hashBytes[16])<<24,
 		}
 
-		h.ticks = append(h.ticks, *n)
+		h.points = append(h.points, *n)
 		hash.Reset()
 	}
 }
 
-func (h *hashRing) Bake() {
-	h.ticks.Sort()
-	h.length = len(h.ticks)
+func (h *HashRing) Bake() {
+	h.points.Sort()
+	h.length = len(h.points)
 }
 
-func (h *hashRing) Hash(s string) string {
+func (h *HashRing) Hash(s string) backend.IBackend {
 	hash := sha1.New()
 	hash.Write([]byte(s))
 	hashBytes := hash.Sum(nil)
 	v := uint(hashBytes[19]) | uint(hashBytes[18])<<8 | uint(hashBytes[17])<<16 | uint(hashBytes[16])<<24
-	i := sort.Search(h.length, func(i int) bool { return h.ticks[i].hash >= v })
+	i := sort.Search(h.length, func(i int) bool { return h.points[i].hash >= v })
 
 	if i == h.length {
 		i = 0
 	}
 
-	return h.ticks[i].node
+	return h.points[i].backend
 }

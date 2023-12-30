@@ -24,7 +24,7 @@ func (roundRobinPool *RoundRobinPool) GetBackendCount() int {
 	return len(roundRobinPool.backends)
 }
 
-func (roundRobinPool *RoundRobinPool) GetNextServer() backend.IBackend {
+func (roundRobinPool *RoundRobinPool) GetNextServer(ip string) backend.IBackend {
 	roundRobinPool.current = (roundRobinPool.current + 1) % len(roundRobinPool.backends)
 	return roundRobinPool.backends[roundRobinPool.current]
 }

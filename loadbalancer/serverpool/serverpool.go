@@ -5,6 +5,7 @@ import (
 
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/enums"
+	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/helpers"
 )
 
 type BeConfig struct {
@@ -22,7 +23,7 @@ type LbConfig struct {
 type ServerPool interface {
 	AddBackEnd(backend backend.IBackend)
 	GetBackendCount() int
-	GetNextServer() backend.IBackend
+	GetNextServer(ip string) backend.IBackend
 	GetBackends() []backend.IBackend
 	ConfigurePool(algorithm enums.LoadBalancingAlgorithmType, configs []BeConfig)
 }
@@ -35,6 +36,11 @@ func CreatePool(algorithm enums.LoadBalancingAlgorithmType) (ServerPool, error) 
 		return &WeightedRoundRobinPool{}, nil
 	case enums.LeastConnection:
 		return &LeastConnPool{}, nil
+	case enums.IpHash:
+		return &IPHashPool{
+			//ring number needs to be reoved and added to config
+			ring: helpers.NewRing(200),
+		}, nil
 	default:
 		return nil, errors.New("no algorithm configured")
 	}

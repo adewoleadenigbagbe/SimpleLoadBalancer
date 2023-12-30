@@ -17,7 +17,7 @@ type LoadBalancer struct {
 
 // Serve: the loadbalancer serves request to the next backend
 func (loadbalancer *LoadBalancer) Serve(w http.ResponseWriter, r *http.Request) {
-	nextServer := loadbalancer.ServerPool.GetNextServer()
+	nextServer := loadbalancer.ServerPool.GetNextServer(r.RemoteAddr)
 	if nextServer != nil {
 		nextServer.Serve(w, r)
 		return

@@ -58,7 +58,7 @@ func TestWeightedRoundRobinNextServer(t *testing.T) {
 	results := make(map[backend.IBackend]int)
 	noofTimes := 1000
 	for i := 0; i < noofTimes; i++ {
-		b := wrr.GetNextServer()
+		b := wrr.GetNextServer("")
 		results[b]++
 	}
 

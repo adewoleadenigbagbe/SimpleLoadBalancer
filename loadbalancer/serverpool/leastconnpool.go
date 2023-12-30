@@ -23,7 +23,7 @@ func (leastConnPool *LeastConnPool) GetBackendCount() int {
 	return len(leastConnPool.backends)
 }
 
-func (leastConnPool *LeastConnPool) GetNextServer() backend.IBackend {
+func (leastConnPool *LeastConnPool) GetNextServer(ip string) backend.IBackend {
 	var leastConnectedPeer backend.IBackend
 	for _, b := range leastConnPool.backends {
 		if b.IsAlive() {
