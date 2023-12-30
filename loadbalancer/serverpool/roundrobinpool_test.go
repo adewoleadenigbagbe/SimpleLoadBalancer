@@ -11,14 +11,14 @@ import (
 )
 
 func TestCreateRoundRobinPool(t *testing.T) {
-	serverpool, _ := CreatePool(enums.RoundRobin)
+	serverpool, _ := CreatePool(enums.RoundRobin, 0)
 	_, ok := serverpool.(*RoundRobinPool)
 	assert.Equal(t, true, ok)
 }
 
 func TestGetPoolSize(t *testing.T) {
 	url, _ := url.Parse("http://localhost:3333")
-	serverpool, _ := CreatePool(enums.RoundRobin)
+	serverpool, _ := CreatePool(enums.RoundRobin, 0)
 	roundRobinPool, _ := serverpool.(*RoundRobinPool)
 
 	b := backend.NewBackend(url, httputil.NewSingleHostReverseProxy(url)).(*backend.Backend)

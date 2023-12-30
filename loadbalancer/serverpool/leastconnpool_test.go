@@ -12,7 +12,7 @@ import (
 
 func TestLeastConnPoolSize(t *testing.T) {
 	url, _ := url.Parse("http://localhost:3333")
-	serverpool, _ := CreatePool(enums.LeastConnection)
+	serverpool, _ := CreatePool(enums.LeastConnection, 0)
 	leastConnPool, _ := serverpool.(*LeastConnPool)
 
 	b := backend.NewBackend(url, httputil.NewSingleHostReverseProxy(url)).(*backend.Backend)

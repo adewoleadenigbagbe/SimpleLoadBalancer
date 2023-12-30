@@ -6,7 +6,6 @@ const (
 	RoundRobin LoadBalancingAlgorithmType = iota + 1
 	WeightedRoundRobin
 	IpHash
-	UrlHash
 	LeastConnection
 	LeastResponseTime
 	ResourceLoad

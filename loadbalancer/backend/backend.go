@@ -5,6 +5,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -18,12 +19,14 @@ type IBackend interface {
 	IsAlive() bool
 	GetURL() url.URL
 	GetActiveConnections() int
+	GetResponseTime() int64
 	Serve(w http.ResponseWriter, r *http.Request)
 }
 
 type Metrics struct {
-	connections int
-	weight      int
+	connections  int
+	weight       int
+	responseTime time.Duration
 }
 
 type MetricsOption func(*Metrics)
@@ -57,13 +60,6 @@ func (backend *Backend) IsAlive() bool {
 	return backend.alive
 }
 
-func (backend *Backend) Serve(w http.ResponseWriter, r *http.Request) {
-	backend.mux.Lock()
-	defer backend.mux.Unlock()
-	backend.metrics.connections++
-	backend.reverseProxy.ServeHTTP(w, r)
-}
-
 func (backend *Backend) GetActiveConnections() int {
 	backend.mux.RLock()
 	defer backend.mux.RUnlock()
@@ -74,6 +70,22 @@ func (backend *Backend) GetWeight() int {
 	backend.mux.RLock()
 	defer backend.mux.RUnlock()
 	return backend.metrics.weight
+}
+
+func (backend *Backend) GetResponseTime() int64 {
+	return backend.metrics.responseTime.Milliseconds()
+}
+
+func (backend *Backend) Serve(w http.ResponseWriter, r *http.Request) {
+	backend.mux.Lock()
+	defer backend.mux.Unlock()
+	backend.metrics.connections++
+	beforeServe := time.Now()
+	backend.reverseProxy.ServeHTTP(w, r)
+	afterServe := time.Now()
+
+	duration := afterServe.Sub(beforeServe)
+	backend.metrics.responseTime = duration
 }
 
 func NewBackend(endpoint *url.URL, proxy *httputil.ReverseProxy, options ...MetricsOption) IBackend {

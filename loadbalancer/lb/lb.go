@@ -31,6 +31,7 @@ func CreateLB(config pool.LbConfig) (*LoadBalancer, error) {
 		err        error
 		serverPool pool.ServerPool
 		algorithm  enums.LoadBalancingAlgorithmType
+		ringNumber int
 	)
 
 	switch config.Algorithm {
@@ -38,11 +39,20 @@ func CreateLB(config pool.LbConfig) (*LoadBalancer, error) {
 		algorithm = enums.RoundRobin
 	case "WeightedRoundRobin":
 		algorithm = enums.WeightedRoundRobin
+	case "IPHash":
+		algorithm = enums.IpHash
+	case "LeastConnection":
+		algorithm = enums.LeastConnection
+	case "LeastResponseTime":
+		algorithm = enums.LeastResponseTime
+		ringNumber = config.Ring
+	case "ResourceLoad":
+		algorithm = enums.ResourceLoad
 	default:
 		log.Fatal("no algorithm configured")
 	}
 
-	serverPool, err = pool.CreatePool(algorithm)
+	serverPool, err = pool.CreatePool(algorithm, ringNumber)
 	if err != nil {
 		log.Fatal(err)
 	}
