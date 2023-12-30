@@ -24,10 +24,10 @@ func (leastResponseTimePool *LeastResponseTimePool) GetBackendCount() int {
 }
 
 func (leastResponseTimePool *LeastResponseTimePool) GetNextServer(ip string) backend.IBackend {
-	var leastResponseTimePeer backend.IBackend
+	var current backend.IBackend
 	for _, b := range leastResponseTimePool.backends {
 		if b.IsAlive() {
-			leastResponseTimePeer = b
+			current = b
 			break
 		}
 	}
@@ -37,17 +37,22 @@ func (leastResponseTimePool *LeastResponseTimePool) GetNextServer(ip string) bac
 			continue
 		}
 
-		if leastResponseTimePeer.GetActiveConnections() >= b.GetActiveConnections() {
-			if leastResponseTimePeer.GetActiveConnections() == b.GetActiveConnections() {
-				if leastResponseTimePeer.GetResponseTime() > b.GetResponseTime() {
-					leastResponseTimePeer = b
+		leastActiveConn := current.GetActiveConnections()
+		bActiveConn := b.GetActiveConnections()
+		if leastActiveConn >= bActiveConn {
+			if leastActiveConn == bActiveConn {
+				//you need to calculate this separately to see decimals
+				avgA := float64(current.GetResponseTime() / int64(leastActiveConn))
+				avgB := float64(b.GetResponseTime() / int64(bActiveConn))
+				if avgA > avgB {
+					current = b
 					continue
 				}
 			}
-			leastResponseTimePeer = b
+			current = b
 		}
 	}
-	return leastResponseTimePeer
+	return current
 }
 
 func (leastResponseTimePool *LeastResponseTimePool) GetBackends() []backend.IBackend {

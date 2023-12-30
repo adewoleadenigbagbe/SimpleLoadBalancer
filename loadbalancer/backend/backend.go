@@ -85,7 +85,7 @@ func (backend *Backend) Serve(w http.ResponseWriter, r *http.Request) {
 	afterServe := time.Now()
 
 	duration := afterServe.Sub(beforeServe)
-	backend.metrics.responseTime = duration
+	backend.metrics.responseTime += duration
 }
 
 func NewBackend(endpoint *url.URL, proxy *httputil.ReverseProxy, options ...MetricsOption) IBackend {
