@@ -116,3 +116,9 @@ func WithWeight(weight int) MetricsOption {
 		m.weight = weight
 	}
 }
+
+func WithResponseTime(d time.Duration) MetricsOption {
+	return func(m *Metrics) {
+		m.responseTime = d
+	}
+}
