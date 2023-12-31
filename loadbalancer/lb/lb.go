@@ -1,9 +1,8 @@
 package lb
 
 import (
-	"log"
+	"errors"
 	"net/http"
-	"net/url"
 
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/enums"
 	pool "github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/serverpool"
@@ -17,7 +16,8 @@ type LoadBalancer struct {
 
 // Serve: the loadbalancer serves request to the next backend
 func (loadbalancer *LoadBalancer) Serve(w http.ResponseWriter, r *http.Request) {
-	nextServer := loadbalancer.ServerPool.GetNextServer(r.RemoteAddr)
+	modifyRequest(r)
+	nextServer := loadbalancer.ServerPool.GetNextServer(r.Header.Get("X-Client-Ip"))
 	if nextServer != nil {
 		nextServer.Serve(w, r)
 		return
@@ -49,12 +49,13 @@ func CreateLB(config pool.LbConfig) (*LoadBalancer, error) {
 	case "ResourceLoad":
 		algorithm = enums.ResourceLoad
 	default:
-		log.Fatal("no algorithm configured")
+		err = errors.New("no algorithm configured")
+		return nil, err
 	}
 
 	serverPool, err = pool.CreatePool(algorithm, ringNumber)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	serverPool.ConfigurePool(algorithm, config.BeConfigs)
@@ -63,11 +64,14 @@ func CreateLB(config pool.LbConfig) (*LoadBalancer, error) {
 		algorithm:  algorithm,
 		ServerPool: serverPool,
 	}
-
-	// server the load balancer on tcp connection
 	return lb, nil
 }
 
-func modifyRequest(url url.URL, request *http.Request) error {
-	return nil
+func modifyRequest(request *http.Request) {
+	setHeaders(request)
+}
+
+func setHeaders(request *http.Request) {
+	request.Header.Set("X-Forwarded", request.Host)
+	request.Header.Set("X-Client-Ip", request.RemoteAddr)
 }

@@ -12,6 +12,7 @@ import (
 func TestWeightedRoundRobinNextServer(t *testing.T) {
 	url1, _ := url.Parse("http://localhost:3330")
 	b1 := backend.NewBackend(url1, httputil.NewSingleHostReverseProxy(url1), backend.WithWeight(4)).(*backend.Backend)
+	b1.SetAlive(true)
 
 	ws1 := &WeightedS{
 		backend:         b1,
@@ -21,6 +22,7 @@ func TestWeightedRoundRobinNextServer(t *testing.T) {
 
 	url2, _ := url.Parse("http://localhost:3331")
 	b2 := backend.NewBackend(url2, httputil.NewSingleHostReverseProxy(url2), backend.WithWeight(3)).(*backend.Backend)
+	b2.SetAlive(true)
 
 	ws2 := &WeightedS{
 		backend:         b2,
@@ -30,6 +32,7 @@ func TestWeightedRoundRobinNextServer(t *testing.T) {
 
 	url3, _ := url.Parse("http://localhost:3332")
 	b3 := backend.NewBackend(url3, httputil.NewSingleHostReverseProxy(url3), backend.WithWeight(2)).(*backend.Backend)
+	b3.SetAlive(true)
 
 	ws3 := &WeightedS{
 		backend:         b3,
@@ -39,6 +42,7 @@ func TestWeightedRoundRobinNextServer(t *testing.T) {
 
 	url4, _ := url.Parse("http://localhost:3333")
 	b4 := backend.NewBackend(url4, httputil.NewSingleHostReverseProxy(url4), backend.WithWeight(1)).(*backend.Backend)
+	b4.SetAlive(true)
 
 	ws4 := &WeightedS{
 		backend:         b4,

@@ -42,7 +42,6 @@ func (roundRobinPool *RoundRobinPool) ConfigurePool(algorithm enums.LoadBalancin
 
 		proxy := httputil.NewSingleHostReverseProxy(url)
 		backend := backend.NewBackend(url, proxy)
-
 		backend.SetAlive(true)
 		roundRobinPool.AddBackEnd(backend)
 	}

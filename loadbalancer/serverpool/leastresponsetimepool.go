@@ -41,9 +41,8 @@ func (leastResponseTimePool *LeastResponseTimePool) GetNextServer(ip string) bac
 		bActiveConn := b.GetActiveConnections()
 		if leastActiveConn >= bActiveConn {
 			if leastActiveConn == bActiveConn {
-				//you need to calculate this separately to see decimals
-				avgA := float64(current.GetResponseTime() / int64(leastActiveConn))
-				avgB := float64(b.GetResponseTime() / int64(bActiveConn))
+				avgA := float64(current.GetResponseTime()) / float64(leastActiveConn)
+				avgB := float64(b.GetResponseTime()) / float64(bActiveConn)
 				if avgA > avgB {
 					current = b
 					continue

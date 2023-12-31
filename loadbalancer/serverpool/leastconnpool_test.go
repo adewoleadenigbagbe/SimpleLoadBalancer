@@ -16,6 +16,7 @@ func TestLeastConnPoolSize(t *testing.T) {
 	leastConnPool, _ := serverpool.(*LeastConnPool)
 
 	b := backend.NewBackend(url, httputil.NewSingleHostReverseProxy(url)).(*backend.Backend)
+	b.SetAlive(true)
 	leastConnPool.AddBackEnd(b)
 
 	//Assert
