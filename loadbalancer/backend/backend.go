@@ -73,7 +73,7 @@ func (backend *Backend) GetWeight() int {
 }
 
 func (backend *Backend) GetResponseTime() int64 {
-	return backend.metrics.responseTime.Milliseconds()
+	return backend.metrics.responseTime.Microseconds()
 }
 
 func (backend *Backend) Serve(w http.ResponseWriter, r *http.Request) {
