@@ -31,12 +31,12 @@ func (loadbalancer *LoadBalancer) Serve(w http.ResponseWriter, r *http.Request) 
 }
 
 func (loadbalancer *LoadBalancer) HealthCheck(ctx context.Context) {
-	done := make(chan bool)
 	healthCheckTicker := time.NewTicker(5 * time.Minute)
 	for {
 		select {
-		case <-done:
+		case <-ctx.Done():
 			healthCheckTicker.Stop()
+			fmt.Println("Gracefully shutting down health check")
 			return
 		case t := <-healthCheckTicker.C:
 			fmt.Println("Tick at", t)
