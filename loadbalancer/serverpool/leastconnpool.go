@@ -55,6 +55,7 @@ func (leastConnPool *LeastConnPool) ConfigurePool(algorithm enums.LoadBalancingA
 		}
 
 		proxy := httputil.NewSingleHostReverseProxy(url)
+		proxy.ErrorHandler = ProxyErrorHandler(proxy, leastConnPool, url)
 		backend := backend.NewBackend(url, proxy, backend.WithConnections(0))
 
 		backend.SetAlive(true)

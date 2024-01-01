@@ -31,11 +31,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	//create echo server
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", lbConfig.Port),
 		Handler: http.HandlerFunc(loadbalancer.Serve),
 	}
+
+	go loadbalancer.HealthCheck(ctx)
 
 	// Start server
 	go func() {
@@ -45,13 +50,10 @@ func main() {
 		}
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	<-ctx.Done()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err = server.Shutdown(ctx); err != nil {
+	if err = server.Shutdown(shutdownCtx); err != nil {
 		log.Fatal(err)
 	}
 }

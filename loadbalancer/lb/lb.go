@@ -1,9 +1,13 @@
 package lb
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/enums"
 	pool "github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/serverpool"
 )
@@ -16,7 +20,7 @@ type LoadBalancer struct {
 
 // Serve: the loadbalancer serves request to the next backend
 func (loadbalancer *LoadBalancer) Serve(w http.ResponseWriter, r *http.Request) {
-	modifyRequest(r)
+	loadbalancer.modifyRequest(r)
 	nextServer := loadbalancer.ServerPool.GetNextServer(r.Header.Get("X-Client-Ip"))
 	if nextServer != nil {
 		nextServer.Serve(w, r)
@@ -24,6 +28,53 @@ func (loadbalancer *LoadBalancer) Serve(w http.ResponseWriter, r *http.Request) 
 	}
 
 	http.Error(w, "Service not available", http.StatusServiceUnavailable)
+}
+
+func (loadbalancer *LoadBalancer) HealthCheck(ctx context.Context) {
+	done := make(chan bool)
+	healthCheckTicker := time.NewTicker(5 * time.Minute)
+	for {
+		select {
+		case <-done:
+			healthCheckTicker.Stop()
+			return
+		case t := <-healthCheckTicker.C:
+			fmt.Println("Tick at", t)
+			check(ctx, loadbalancer.ServerPool.GetBackends())
+		}
+	}
+}
+
+func (loadbalancer *LoadBalancer) modifyRequest(request *http.Request) {
+	setHeaders(request)
+}
+
+func check(ctx context.Context, backends []backend.IBackend) {
+	aliveChan := make(chan bool, 1)
+	for _, b := range backends {
+		requestCtx, stop := context.WithTimeout(ctx, 10*time.Second)
+		defer stop()
+		status := "up"
+		backend.IsBackendAlive(requestCtx, aliveChan, b.GetURL())
+		select {
+		case <-ctx.Done():
+			fmt.Println("Gracefully shutting down health check")
+			return
+		case alive := <-aliveChan:
+			b.SetAlive(alive)
+			if !alive {
+				status = "down"
+			}
+		}
+
+		url := b.GetURL()
+		fmt.Println("URL Status ", url.String(), "is ", status)
+	}
+}
+
+func setHeaders(request *http.Request) {
+	request.Header.Set("X-Forwarded", request.Host)
+	request.Header.Set("X-Client-Ip", request.RemoteAddr)
 }
 
 func CreateLB(config pool.LbConfig) (*LoadBalancer, error) {
@@ -65,13 +116,4 @@ func CreateLB(config pool.LbConfig) (*LoadBalancer, error) {
 		ServerPool: serverPool,
 	}
 	return lb, nil
-}
-
-func modifyRequest(request *http.Request) {
-	setHeaders(request)
-}
-
-func setHeaders(request *http.Request) {
-	request.Header.Set("X-Forwarded", request.Host)
-	request.Header.Set("X-Client-Ip", request.RemoteAddr)
 }

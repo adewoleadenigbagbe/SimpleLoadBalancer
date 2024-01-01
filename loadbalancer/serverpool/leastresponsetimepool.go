@@ -66,6 +66,7 @@ func (leastResponseTimePool *LeastResponseTimePool) ConfigurePool(algorithm enum
 		}
 
 		proxy := httputil.NewSingleHostReverseProxy(url)
+		proxy.ErrorHandler = ProxyErrorHandler(proxy, leastResponseTimePool, url)
 		backend := backend.NewBackend(url, proxy, backend.WithConnections(0))
 
 		backend.SetAlive(true)

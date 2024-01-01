@@ -64,7 +64,6 @@ func (weightedRoundRobinPool *WeightedRoundRobinPool) GetNextServer(ip string) b
 		if best == nil || ws.currentWeight > best.currentWeight {
 			best = ws
 		}
-
 	}
 
 	if best == nil {
@@ -83,6 +82,7 @@ func (weightedRoundRobinPool *WeightedRoundRobinPool) ConfigurePool(algorithm en
 		}
 
 		proxy := httputil.NewSingleHostReverseProxy(url)
+		proxy.ErrorHandler = ProxyErrorHandler(proxy, weightedRoundRobinPool, url)
 
 		backend := backend.NewBackend(url, proxy, backend.WithWeight(config.Weight))
 		backend.SetAlive(true)

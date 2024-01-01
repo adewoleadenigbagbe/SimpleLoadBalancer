@@ -17,23 +17,23 @@ type IPHashPool struct {
 	ring     *helpers.HashRing
 }
 
-func (ipHashPool IPHashPool) AddBackEnd(backend backend.IBackend) {
+func (ipHashPool *IPHashPool) AddBackEnd(backend backend.IBackend) {
 	ipHashPool.ring.AddNode(backend)
 }
 
-func (ipHashPool IPHashPool) GetBackendCount() int {
+func (ipHashPool *IPHashPool) GetBackendCount() int {
 	return len(ipHashPool.backends)
 }
 
-func (ipHashPool IPHashPool) GetNextServer(ip string) backend.IBackend {
+func (ipHashPool *IPHashPool) GetNextServer(ip string) backend.IBackend {
 	return ipHashPool.ring.Hash(ip)
 }
 
-func (ipHashPool IPHashPool) GetBackends() []backend.IBackend {
+func (ipHashPool *IPHashPool) GetBackends() []backend.IBackend {
 	return ipHashPool.backends
 }
 
-func (ipHashPool IPHashPool) ConfigurePool(algorithm enums.LoadBalancingAlgorithmType, configs []BeConfig) {
+func (ipHashPool *IPHashPool) ConfigurePool(algorithm enums.LoadBalancingAlgorithmType, configs []BeConfig) {
 	for _, config := range configs {
 		url, err := url.Parse(config.Url)
 		if err != nil {
@@ -41,6 +41,8 @@ func (ipHashPool IPHashPool) ConfigurePool(algorithm enums.LoadBalancingAlgorith
 		}
 
 		proxy := httputil.NewSingleHostReverseProxy(url)
+		proxy.ErrorHandler = ProxyErrorHandler(proxy, ipHashPool, url)
+
 		backend := backend.NewBackend(url, proxy)
 
 		backend.SetAlive(true)
