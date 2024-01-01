@@ -50,6 +50,7 @@ func (loadbalancer *LoadBalancer) modifyRequest(request *http.Request) {
 }
 
 func check(ctx context.Context, backends []backend.IBackend) {
+	//TODO:might need to change this to zero, but will test first
 	aliveChan := make(chan bool, 1)
 	for _, b := range backends {
 		requestCtx, stop := context.WithTimeout(ctx, 10*time.Second)
