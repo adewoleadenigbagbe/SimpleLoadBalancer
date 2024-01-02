@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
+	"github.com/samber/lo"
 )
 
 type node struct {
@@ -66,11 +67,17 @@ func (h *HashRing) Hash(s string) backend.IBackend {
 	hash.Write([]byte(s))
 	hashBytes := hash.Sum(nil)
 	v := uint(hashBytes[19]) | uint(hashBytes[18])<<8 | uint(hashBytes[17])<<16 | uint(hashBytes[16])<<24
-	i := sort.Search(h.length, func(i int) bool { return h.points[i].hash >= v })
 
-	if i == h.length {
+	activePoints := lo.Filter(h.points, func(p node, index int) bool {
+		return p.backend.IsAlive()
+	})
+
+	activePointsLength := len(activePoints)
+	i := sort.Search(activePointsLength, func(i int) bool { return activePoints[i].hash >= v })
+
+	if i == activePointsLength {
 		i = 0
 	}
 
-	return h.points[i].backend
+	return activePoints[i].backend
 }

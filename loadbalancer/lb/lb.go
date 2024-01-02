@@ -10,6 +10,8 @@ import (
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/enums"
 	pool "github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/serverpool"
+	"github.com/google/uuid"
+	"github.com/samber/lo"
 )
 
 type LoadBalancer struct {
@@ -31,7 +33,7 @@ func (loadbalancer *LoadBalancer) Serve(w http.ResponseWriter, r *http.Request) 
 }
 
 func (loadbalancer *LoadBalancer) HealthCheck(ctx context.Context) {
-	healthCheckTicker := time.NewTicker(5 * time.Minute)
+	healthCheckTicker := time.NewTicker(2 * time.Minute)
 	for {
 		select {
 		case <-ctx.Done():
@@ -40,7 +42,10 @@ func (loadbalancer *LoadBalancer) HealthCheck(ctx context.Context) {
 			return
 		case t := <-healthCheckTicker.C:
 			fmt.Println("Tick at", t)
-			check(ctx, loadbalancer.ServerPool.GetBackends())
+			healthyBackends := lo.Filter(loadbalancer.ServerPool.GetBackends(), func(item backend.IBackend, index int) bool {
+				return item.IsAlive()
+			})
+			check(ctx, healthyBackends)
 		}
 	}
 }
@@ -74,6 +79,7 @@ func check(ctx context.Context, backends []backend.IBackend) {
 }
 
 func setHeaders(request *http.Request) {
+	request.Header.Set("X-Request-Id", uuid.New().String())
 	request.Header.Set("X-Forwarded", request.Host)
 	request.Header.Set("X-Client-Ip", request.RemoteAddr)
 }

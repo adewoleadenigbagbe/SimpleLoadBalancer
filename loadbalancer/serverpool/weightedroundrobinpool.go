@@ -51,7 +51,7 @@ func (weightedRoundRobinPool *WeightedRoundRobinPool) GetNextServer(ip string) b
 	for i := 0; i < len(weightedRoundRobinPool.weightedBackends); i++ {
 		ws := weightedRoundRobinPool.weightedBackends[i]
 
-		if ws == nil {
+		if ws == nil || !ws.backend.IsAlive() {
 			continue
 		}
 

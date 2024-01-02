@@ -7,6 +7,7 @@ import (
 
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/enums"
+	"github.com/samber/lo"
 )
 
 var _ ServerPool = (*RoundRobinPool)(nil)
@@ -25,8 +26,11 @@ func (roundRobinPool *RoundRobinPool) GetBackendCount() int {
 }
 
 func (roundRobinPool *RoundRobinPool) GetNextServer(ip string) backend.IBackend {
-	roundRobinPool.current = (roundRobinPool.current + 1) % len(roundRobinPool.backends)
-	return roundRobinPool.backends[roundRobinPool.current]
+	healthyBackends := lo.Filter(roundRobinPool.backends, func(item backend.IBackend, index int) bool {
+		return item.IsAlive()
+	})
+	roundRobinPool.current = (roundRobinPool.current + 1) % len(healthyBackends)
+	return healthyBackends[roundRobinPool.current]
 }
 
 func (roundRobinPool *RoundRobinPool) GetBackends() []backend.IBackend {
