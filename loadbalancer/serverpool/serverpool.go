@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -44,7 +45,11 @@ func CreatePool(algorithm enums.LoadBalancingAlgorithmType, ringNumber int) (Ser
 	switch algorithm {
 	case enums.RoundRobin:
 		return &RoundRobinPool{}, nil
-	case enums.WeightedRoundRobin:
+	case enums.RandomWeightedRoundRobin:
+		return &RandomWeightedRoundRobinPool{
+			r: rand.New(rand.NewSource(int64(time.Now().UnixNano()))),
+		}, nil
+	case enums.SmoothWeightedRoundRobin:
 		return &WeightedRoundRobinPool{}, nil
 	case enums.LeastConnection:
 		return &LeastConnPool{}, nil

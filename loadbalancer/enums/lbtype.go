@@ -4,7 +4,8 @@ type LoadBalancingAlgorithmType int
 
 const (
 	RoundRobin LoadBalancingAlgorithmType = iota + 1
-	WeightedRoundRobin
+	RandomWeightedRoundRobin
+	SmoothWeightedRoundRobin
 	IpHash
 	LeastConnection
 	LeastResponseTime

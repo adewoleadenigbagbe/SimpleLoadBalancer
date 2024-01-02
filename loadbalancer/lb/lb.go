@@ -95,8 +95,10 @@ func CreateLB(config pool.LbConfig) (*LoadBalancer, error) {
 	switch config.Algorithm {
 	case "RoundRobin":
 		algorithm = enums.RoundRobin
-	case "WeightedRoundRobin":
-		algorithm = enums.WeightedRoundRobin
+	case "SmoothWeightedRoundRobin":
+		algorithm = enums.SmoothWeightedRoundRobin
+	case "RandomWeightedRoundRobin":
+		algorithm = enums.RandomWeightedRoundRobin
 	case "IPHash":
 		algorithm = enums.IpHash
 	case "LeastConnection":
