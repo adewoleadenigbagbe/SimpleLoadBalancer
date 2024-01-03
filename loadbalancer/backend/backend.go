@@ -56,20 +56,23 @@ func (backend *Backend) GetURL() url.URL {
 
 func (backend *Backend) IsAlive() bool {
 	backend.mux.RLock()
+	alive := backend.alive
 	defer backend.mux.RUnlock()
-	return backend.alive
+	return alive
 }
 
 func (backend *Backend) GetActiveConnections() int {
 	backend.mux.RLock()
+	connections := backend.metrics.connections
 	defer backend.mux.RUnlock()
-	return backend.metrics.connections
+	return connections
 }
 
 func (backend *Backend) GetWeight() int {
 	backend.mux.RLock()
+	weight := backend.metrics.weight
 	defer backend.mux.RUnlock()
-	return backend.metrics.weight
+	return weight
 }
 
 func (backend *Backend) GetResponseTime() int64 {
@@ -77,15 +80,15 @@ func (backend *Backend) GetResponseTime() int64 {
 }
 
 func (backend *Backend) Serve(w http.ResponseWriter, r *http.Request) {
-	backend.mux.Lock()
-	defer backend.mux.Unlock()
-	backend.metrics.connections++
 	beforeServe := time.Now()
 	backend.reverseProxy.ServeHTTP(w, r)
 	afterServe := time.Now()
 
+	backend.mux.Lock()
+	backend.metrics.connections++
 	duration := afterServe.Sub(beforeServe)
 	backend.metrics.responseTime += duration
+	backend.mux.Unlock()
 }
 
 func NewBackend(endpoint *url.URL, proxy *httputil.ReverseProxy, options ...MetricsOption) IBackend {

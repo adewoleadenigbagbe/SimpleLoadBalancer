@@ -74,7 +74,7 @@ func ProxyErrorHandler(proxy *httputil.ReverseProxy, pool ServerPool, backendUrl
 			// 	proxy.ServeHTTP(w, r)
 			// }
 
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(5 * time.Millisecond)
 			ctx := context.WithValue(r.Context(), Retry, retries+1)
 			proxy.ServeHTTP(w, r.WithContext(ctx))
 			return
@@ -89,11 +89,14 @@ func ProxyErrorHandler(proxy *httputil.ReverseProxy, pool ServerPool, backendUrl
 			}
 		}
 
-		attempts := GetRetryFromRequestContext(r.Context())
+		attempts := GetAttemptFromRequestContext(r.Context())
 		fmt.Printf("%s(%s) Attempting retry %d\n", r.RemoteAddr, r.URL.Path, attempts)
 		ctx := context.WithValue(r.Context(), Attempts, attempts+1)
-
-		pool.GetNextServer(r.WithContext(ctx).Header.Get("X-Client-Ip"))
+		nextServer := pool.GetNextServer(r.WithContext(ctx).Header.Get("X-Client-Ip"))
+		if nextServer != nil {
+			nextServer.Serve(w, r)
+			return
+		}
 	}
 }
 
