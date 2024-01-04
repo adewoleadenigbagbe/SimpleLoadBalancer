@@ -8,6 +8,7 @@ import (
 
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/backend"
 	"github.com/adewoleadenigbagbe/simpleloadbalancer/loadbalancer/enums"
+	"github.com/samber/lo"
 )
 
 var _ ServerPool = (*RandomWeightedRoundRobinPool)(nil)
@@ -48,19 +49,29 @@ func (randomWeightedRoundRobinPool *RandomWeightedRoundRobinPool) ConfigurePool(
 }
 
 func (randomWeightedRoundRobinPool *RandomWeightedRoundRobinPool) GetNextServer(ip string) backend.IBackend {
-	if len(randomWeightedRoundRobinPool.backends) == 0 {
+	healthyBackends := lo.Filter(randomWeightedRoundRobinPool.backends, func(item backend.IBackend, index int) bool {
+		return item.IsAlive()
+	})
+
+	if len(healthyBackends) == 0 {
 		return nil
 	}
-	if randomWeightedRoundRobinPool.sumOfWeights <= 0 {
+
+	sumWeights := lo.SumBy(healthyBackends, func(b backend.IBackend) int {
+		return b.GetWeight()
+	})
+
+	if sumWeights <= 0 {
 		return nil
 	}
-	randomWeight := randomWeightedRoundRobinPool.r.Intn(randomWeightedRoundRobinPool.sumOfWeights) + 1
-	for _, b := range randomWeightedRoundRobinPool.backends {
+
+	randomWeight := randomWeightedRoundRobinPool.r.Intn(sumWeights) + 1
+	for _, b := range healthyBackends {
 		randomWeight = randomWeight - b.GetWeight()
 		if randomWeight <= 0 {
 			return b
 		}
 	}
 
-	return randomWeightedRoundRobinPool.backends[len(randomWeightedRoundRobinPool.backends)-1]
+	return healthyBackends[len(healthyBackends)-1]
 }

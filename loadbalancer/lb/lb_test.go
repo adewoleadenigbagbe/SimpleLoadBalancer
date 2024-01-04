@@ -165,7 +165,7 @@ func TestServeWeightedRobinPool(t *testing.T) {
 	}
 
 	config := pool.LbConfig{
-		Algorithm: "WeightedRoundRobin",
+		Algorithm: "SmoothWeightedRoundRobin",
 		Ip:        "localhost",
 		Port:      3662,
 		Protocol:  "http",
@@ -199,6 +199,67 @@ func TestServeWeightedRobinPool(t *testing.T) {
 		v := float64(b.GetWeight()*noOfRequest) / float64(totalWeight)
 		connections := math.Round(v)
 		assert.Equal(t, connections, float64(b.GetActiveConnections()))
+	}
+}
+
+func TestServeRandomWeightedRobinPool(t *testing.T) {
+	//Mock Servers
+	noofServers := 5
+	var urls []*url.URL
+	for i := 0; i < noofServers; i++ {
+		mockServer := httptest.NewServer(h)
+		defer mockServer.Close()
+		serverUrl, err := url.Parse(mockServer.URL)
+		urls = append(urls, serverUrl)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	urlstrs := lo.Map(urls, func(item *url.URL, index int) string {
+		return item.String()
+	})
+
+	//Load Balancer
+	var beConfigs []pool.BeConfig
+	initialweight := 0
+	for _, urlstr := range urlstrs {
+		initialweight++
+		beConfig := pool.BeConfig{
+			Url:    urlstr,
+			Weight: initialweight,
+		}
+		beConfigs = append(beConfigs, beConfig)
+	}
+
+	config := pool.LbConfig{
+		Algorithm: "RandomWeightedRoundRobin",
+		Ip:        "localhost",
+		Port:      3662,
+		Protocol:  "http",
+		BeConfigs: beConfigs,
+	}
+
+	lb, _ := CreateLB(config)
+	lbServer := httptest.NewServer(http.HandlerFunc(lb.Serve))
+	defer lbServer.Close()
+
+	//Client
+	noOfRequest := 1000
+	loadBalancerUrl, _ := url.Parse(lbServer.URL)
+	for i := 0; i < noOfRequest; i++ {
+		req, _ := http.NewRequest("GET", loadBalancerUrl.String(), nil)
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer res.Body.Close()
+		io.ReadAll(res.Body)
+	}
+	results := []int{}
+
+	for i := 1; i < len(results); i++ {
+		assert.NotEqual(t, results[i-1], results[i])
 	}
 }
 
@@ -340,8 +401,6 @@ func TestServerLeastResponseTimePool(t *testing.T) {
 	for _, b := range backends {
 		times = append(times, b.GetResponseTime())
 	}
-
-	fmt.Println(times)
 
 	for i := 1; i < len(times); i++ {
 		assert.NotEqual(t, times[i-1], times[i])

@@ -44,12 +44,16 @@ func (weightedRoundRobinPool *WeightedRoundRobinPool) GetBackends() []backend.IB
 // GetNextServer implement smooth weighted round-robin balancing. Check the following link to see it works
 // https://github.com/nginx/nginx/commit/52327e0627f49dbda1e8db695e63a4b0af4448b1
 func (weightedRoundRobinPool *WeightedRoundRobinPool) GetNextServer(ip string) backend.IBackend {
+	healthyBackends := lo.Filter(weightedRoundRobinPool.weightedBackends, func(item *WeightedS, index int) bool {
+		return item.backend.IsAlive()
+	})
+
 	//increment the respective be with their assigned weight and get the culmulative sum of all weight
 	var best *WeightedS
 	total := 0
 
-	for i := 0; i < len(weightedRoundRobinPool.weightedBackends); i++ {
-		ws := weightedRoundRobinPool.weightedBackends[i]
+	for i := 0; i < len(healthyBackends); i++ {
+		ws := healthyBackends[i]
 
 		if ws == nil || !ws.backend.IsAlive() {
 			continue
