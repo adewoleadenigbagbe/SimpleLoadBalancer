@@ -70,7 +70,6 @@ func main() {
 
 	e.POST("/product", handlers.AddProductHandler)
 
-	// Start server
 	go func() {
 		address := fmt.Sprintf(":%d", config.Port)
 		if err := e.Start(address); err != nil && err != http.ErrServerClosed {

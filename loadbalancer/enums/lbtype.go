@@ -4,9 +4,10 @@ type LoadBalancingAlgorithmType int
 
 const (
 	RoundRobin LoadBalancingAlgorithmType = iota + 1
-	StickyRoundRobin
-	WeightedRoundRobin
-	Hash
+	RandomWeightedRoundRobin
+	SmoothWeightedRoundRobin
+	IpHash
 	LeastConnection
 	LeastResponseTime
+	ResourceLoad
 )
