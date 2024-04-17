@@ -3,26 +3,27 @@
     "port": 3008,
     "protocol" : "http",
     "algorithm" : "RoundRobin",
+    "ring" : 200,
     "beConfigs" : [
       {
         "url": "http://localhost:4090",
-        "weight" : 0
+        "weight" : 7
       },
       {
         "url": "http://localhost:4091",
-        "weight" : 0
+        "weight" : 2
       },
       {
         "url": "http://localhost:4092",
-        "weight" :0
+        "weight" :1
       },
       {
         "url": "http://localhost:4093",
-        "weight" : 0
+        "weight" : 4
       },
       {
         "url": "http://localhost:4094",
-        "weight" : 0
+        "weight" : 1
       }
     ]
 }
