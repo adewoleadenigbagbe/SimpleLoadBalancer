@@ -19,12 +19,12 @@ There are two folders in the project:
 * LoadBalancer
 * Server
 
-The LoadBalancer folder contains the services as well as the corresponding algorithm. you can configure the backend url, default algorithm type and weights in the **config.json** file, cd the loadbalancer folder and run the main.go file in cmd line
+The loadBalancer folder contains the services as well as the corresponding algorithm. you can configure the backend url, default algorithm type and weights in the **config.json** file, cd the loadbalancer folder and run the main.go file in cmd line
 
-The Server contains a rest api endpoint with crud operations to test the load balancing service
-Add Product
-Get Products
-Get Product by Id
+The server contains a rest api endpoint with crud operations to test the load balancing service
+* Add Product
+* Get Products
+* Get Product by Id
 
 The database in use is SQLite , so you make sure you have the SQLite services installed on your environment, any version preferably
 
