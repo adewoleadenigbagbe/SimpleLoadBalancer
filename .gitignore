@@ -23,5 +23,4 @@ go.work
 
 
 *.db
-.vscode/launch.json
 .vscode

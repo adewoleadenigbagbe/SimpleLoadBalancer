@@ -26,13 +26,13 @@ The server contains a rest api endpoint with crud operations to test the load ba
 * Get Products
 * Get Product by Id
 
-The database in use is SQLite , so you make sure you have the SQLite services installed on your environment, any version preferably
+The database in use is SQLite , so you make sure you have the SQLite3 service installed on your environment, any version preferably
 
 Cd to the server folder , change **config.json** of the server folder based on the address and port. You need to run multiple instance of the server with address and port matching the **config.json** the loadbalancer folder.Use a client to test the endpoint and see the implementation of how the load balancing works
 
 
 ## Dependencies
-SQLite Database
+SQLite3 Database
 
 
 
