@@ -10,7 +10,7 @@ A Load balancer sits in front of a group of servers and routes client requests a
 * Least Connection
 * Least ResponseTime
  
-Check this link to read more about the algorithm type ([LoadBalancingAlgorithm](https://aws.amazon.com/what-is/load-balancing/#:~:text=A%20load%20balancing%20algorithm%20is,fall%20into%20two%20main%20categories.))
+Check this link to read more about the algorithm type [LoadBalancingAlgorithm](https://aws.amazon.com/what-is/load-balancing/#:~:text=A%20load%20balancing%20algorithm%20is,fall%20into%20two%20main%20categories.)
 
 
 ## Project Setup
